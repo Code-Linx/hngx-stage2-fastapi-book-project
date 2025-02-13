@@ -8,24 +8,21 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
       - name: Set up SSH Key
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ secrets.DIGITALOCEAN_IP }} >> ~/.ssh/known_hosts
+        uses: shimataro/ssh-key-action@v2  # Easier way to set up SSH key
+        with:
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          known_hosts: 'just accept' # Or add the line from step 5 above
 
       - name: Deploy to DigitalOcean
         run: |
-          ssh root@${{ secrets.DIGITALOCEAN_IP }} <<EOF
-          cd /var/www/hngx-stage2-fastapi-book-project
-          git pull origin main
-          source venv/bin/activate
-          pip install -r requirements.txt
-          systemctl restart fastapi
-          EOF
+          ssh root@${{ secrets.DIGITALOCEAN_IP }} "
+            cd /var/www/hngx-stage2-fastapi-book-project
+            git pull origin main
+            source venv/bin/activate
+            pip install -r requirements.txt
+            sudo systemctl restart fastapi  # Use sudo for systemctl
+          "
