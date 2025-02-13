@@ -8,26 +8,26 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-      - name: Set up SSH Key
-        uses: shimataro/ssh-key-action@v2
-        with:
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          known_hosts: 'just accept' 
-
-      - name: Add Digital Ocean Host Key  
+      - name: Set up SSH key
         run: |
           mkdir -p ~/.ssh
-          ssh-keyscan ${{ secrets.DIGITALOCEAN_IP }} >> ~/.ssh/known_hosts
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H YOUR_SERVER_IP >> ~/.ssh/known_hosts
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
 
       - name: Deploy to DigitalOcean
         run: |
-          ssh root@${{ secrets.DIGITALOCEAN_IP }} "
+          ssh root@YOUR_SERVER_IP <<EOF
             cd /var/www/hngx-stage2-fastapi-book-project
             git pull origin main
             source venv/bin/activate
             pip install -r requirements.txt
             sudo systemctl restart fastapi
-          "
+          EOF
